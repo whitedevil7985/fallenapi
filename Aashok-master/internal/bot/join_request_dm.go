@@ -47,8 +47,9 @@ type botAPIUpdate struct {
 }
 
 type inlineKeyboardButton struct {
-	Text string `json:"text"`
-	URL  string `json:"url"`
+	Text  string `json:"text"`
+	URL   string `json:"url"`
+	Style string `json:"style,omitempty"`
 }
 
 type inlineKeyboardMarkup struct {
@@ -207,10 +208,10 @@ func sendJoinRequestDM(request *botAPIJoinRequest, botUsername string) error {
 		),
 		ReplyMarkup: inlineKeyboardMarkup{
 			InlineKeyboard: [][]inlineKeyboardButton{
-				{{Text: "🚀 START BOT", URL: startURL}},
+				{{Text: "🚀  START BOT", URL: startURL, Style: "success"}},
 				{
-					{Text: "📢 UPDATES", URL: config.SupportChannel},
-					{Text: "💬 SUPPORT", URL: config.SupportGroup},
+					{Text: "📢  UPDATES", URL: config.SupportChannel, Style: "primary"},
+					{Text: "💬  SUPPORT", URL: config.SupportGroup, Style: "primary"},
 				},
 			},
 		},
