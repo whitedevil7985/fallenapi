@@ -474,7 +474,12 @@ func sendStartedStreaming(c *td.Client, updater *td.Message, chatID int64, saveC
 	escUser := html.EscapeString(saveCache.User)
 
 	nowPlaying := fmt.Sprintf(
-		"<u><b>| Started streaming</b></u>\n\n<b>Title:</b> <a href='%s'>%s</a>\n\n<b>Duration:</b> %s min\n<b>Requested by:</b> %s",
+		`<u><b>🎵 Started streaming</b></u>
+
+<b>Title:</b> <a href='%s'>%s</a>
+
+<b>Duration:</b> %s min
+<b>Requested by:</b> %s`,
 		escURL, escName, utils.SecToMin(saveCache.Duration), escUser,
 	)
 
