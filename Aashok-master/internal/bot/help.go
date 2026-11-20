@@ -155,48 +155,6 @@ func getHelpCategories() map[string]struct {
 	}
 }
 
-func helpHandler(c *td.Client, m *td.Message) error {
-	deleteCmd(c, m)
-
-	if m.IsPrivate() {
-		response := fmt.Sprintf(
-			"<b>Welcome, %s!</b>\n\n"+
-				"<b>%s</b> is a fast, reliable, and feature-rich music bot for Telegram voice and video chats.\n\n"+
-				"<b>Supported platforms:</b> YouTube, Spotify, Apple Music, SoundCloud, Deezer, Twitch, and many more.\n\n"+
-				"Select a category below to browse the available commands.",
-			firstName(c, m),
-			c.Me().FirstName,
-		)
-
-		_, err := m.ReplyText(c, response, &td.SendMessageOpts{
-			ParseMode:       "HTML",
-			Url:             config.StartImg,
-			ForceLargeMedia: true,
-			ShowAboveText:   true,
-			ReplyMarkup:     utils.HelpMenuKeyboard(),
-		})
-		return err
-	}
-
-	helpURL := fmt.Sprintf("https://t.me/%s?start=help", c.Me().Usernames.EditableUsername)
-	replyMarkup := &td.ReplyMarkupInlineKeyboard{
-		Rows: [][]td.InlineKeyboardButton{
-			{
-				{
-					Text: "Open Help in PM",
-					Type: &td.InlineKeyboardButtonTypeUrl{
-						Url: helpURL,
-					},
-				},
-			},
-		},
-	}
-	_, err := m.ReplyText(c, "Click the button below to view the help menu in PM.", &td.SendMessageOpts{
-		ReplyMarkup: replyMarkup,
-	})
-	return err
-}
-
 func helpCallbackHandler(c *td.Client, cb *td.UpdateNewCallbackQuery) error {
 	data := cb.DataString()
 
@@ -210,21 +168,20 @@ func helpCallbackHandler(c *td.Client, cb *td.UpdateNewCallbackQuery) error {
 	if strings.Contains(data, "help_all") {
 		_ = cb.Answer(c, "Opening help menu...", nil)
 		response := fmt.Sprintf(
-			"<b>Welcome, %s!</b>\n\n"+
-				"<b>%s</b> is a fast, reliable, and feature-rich music bot for Telegram voice and video chats.\n\n"+
-				"<b>Supported platforms:</b> YouTube, Spotify, Apple Music, SoundCloud, Deezer, Twitch, and many more.\n\n"+
-				"Select a category below to browse the available commands.",
+			"<h3>Welcome, %s!</h3>\n"+
+				"<p><b>%s</b> is a fast, reliable, and feature-rich music bot for Telegram voice and video chats.</p>\n\n"+
+				"<p><b>Supported platforms:</b> YouTube, Spotify, Apple Music, SoundCloud, Deezer, Twitch, and many more.</p>\n\n"+
+				"<p>Select a category below to browse the available commands.</p>",
 			user.FirstName,
 			c.Me().FirstName,
 		)
 
-		_, _ = cb.EditMessageText(c, response, &td.EditMessageTextOpts{
-			ParseMode:       "HTML",
-			Url:             config.StartImg,
-			ForceLargeMedia: true,
-			ShowAboveText:   true,
-			ReplyMarkup:     utils.HelpMenuKeyboard(),
-		})
+		richMessage := &td.InputRichMessage{
+			Source: &td.RichMessageSourceHtml{
+				Text: response,
+			},
+		}
+		_, _ = c.EditRichMessage(cb.ChatId, cb.MessageId, richMessage, &td.EditRichMessageOpts{ReplyMarkup: utils.HelpMenuKeyboard()})
 		return nil
 	}
 
@@ -232,21 +189,22 @@ func helpCallbackHandler(c *td.Client, cb *td.UpdateNewCallbackQuery) error {
 		_ = cb.Answer(c, "Returning to main menu...", nil)
 
 		response := fmt.Sprintf(
-			"<b>Welcome, %s!</b>\n\n"+
-				"<b>%s</b> lets you stream high-quality music and video directly in Telegram voice and video chats.\n\n"+
-				"<b>Supported platforms:</b> YouTube, Spotify, Apple Music, SoundCloud, Deezer, Twitch, and many more.\n\n"+
-				"Use the buttons below to add the bot to your group or explore the available commands.",
+			"<img src=\"%s\"/>\n"+
+				"<h3>Welcome, %s!</h3>\n"+
+				"<p><b>%s</b> lets you stream high-quality music and video directly in Telegram voice and video chats.</p>\n\n"+
+				"<p><b>Supported platforms:</b> YouTube, Spotify, Apple Music, SoundCloud, Deezer, Twitch, and many more.</p>\n\n"+
+				"<p>Use the buttons below to add the bot to your group or explore the available commands.</p>",
+			config.StartImg,
 			user.FirstName,
 			c.Me().FirstName,
 		)
 
-		_, _ = cb.EditMessageText(c, response, &td.EditMessageTextOpts{
-			ParseMode:       "HTML",
-			Url:             config.StartImg,
-			ForceLargeMedia: true,
-			ShowAboveText:   true,
-			ReplyMarkup:     utils.AddMeMarkup(c.Me().Usernames.EditableUsername),
-		})
+		richMessage := &td.InputRichMessage{
+			Source: &td.RichMessageSourceHtml{
+				Text: response,
+			},
+		}
+		_, _ = c.EditRichMessage(cb.ChatId, cb.MessageId, richMessage, &td.EditRichMessageOpts{ReplyMarkup: utils.AddMeMarkup(c.Me().Usernames.EditableUsername)})
 		return nil
 	}
 
