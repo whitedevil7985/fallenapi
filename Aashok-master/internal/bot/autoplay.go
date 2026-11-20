@@ -53,17 +53,6 @@ func autoplayCallbackHandler(c *td.Client, cb *td.UpdateNewCallbackQuery) error 
 	newState := !state
 	cache.ChatCache.SetAutoplay(chatID, newState)
 
-	text := "<b>Autoplay Control</b>\n\nWhen autoplay is enabled, the bot will automatically play recommended songs from supported platforms when the queue is empty."
-	button := autoplayButton(newState)
-
-	_, err := cb.EditMessageText(c, text, &td.EditMessageTextOpts{
-		ParseMode:   "HTML",
-		ReplyMarkup: button,
-	})
-	if err != nil {
-		c.Logger.Warn("Failed to edit autoplay message", "error", err)
-	}
-
 	var status string
 	if newState {
 		status = "enabled"
