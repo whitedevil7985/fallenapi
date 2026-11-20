@@ -35,14 +35,14 @@ func playCallbackHandler(c *td.Client, cb *td.UpdateNewCallbackQuery) error {
 	if !cache.ChatCache.IsActive(chatID) {
 		text := "There is no active playback."
 		_ = cb.Answer(c, text, nil)
-		_, _ = cb.EditMessageText(c, text, &td.EditMessageTextOpts{ReplyMarkup: utils.ControlButtons(""), ParseMode: "HTML", DisableWebPagePreview: true})
+		_, _ = cb.EditMessageText(c, text, &td.EditMessageTextOpts{ReplyMarkup: utils.ControlButtonsWithAutoplay("", cache.ChatCache.GetAutoplay(chatID)), ParseMode: "HTML", DisableWebPagePreview: true})
 		return nil
 	}
 
 	currentTrack := cache.ChatCache.GetPlayingTrack(chatID)
 	if currentTrack == nil {
 		_ = cb.Answer(c, "There is no active playback.", nil)
-		_, _ = cb.EditMessageText(c, "There is no active playback.", &td.EditMessageTextOpts{ReplyMarkup: utils.ControlButtons(""), ParseMode: "HTML", DisableWebPagePreview: true})
+		_, _ = cb.EditMessageText(c, "There is no active playback.", &td.EditMessageTextOpts{ReplyMarkup: utils.ControlButtonsWithAutoplay("", cache.ChatCache.GetAutoplay(chatID)), ParseMode: "HTML", DisableWebPagePreview: true})
 		return nil
 	}
 
@@ -62,7 +62,7 @@ func playCallbackHandler(c *td.Client, cb *td.UpdateNewCallbackQuery) error {
 	case strings.Contains(data, "play_skip"):
 		if err := calls.Calls.PlayNext(c, chatID); err != nil {
 			_ = cb.Answer(c, "Unable to skip the current track.", nil)
-			_, _ = cb.EditMessageText(c, "Unable to skip the current track.", &td.EditMessageTextOpts{ReplyMarkup: utils.ControlButtons(""), ParseMode: "HTML", DisableWebPagePreview: true})
+			_, _ = cb.EditMessageText(c, "Unable to skip the current track.", &td.EditMessageTextOpts{ReplyMarkup: utils.ControlButtonsWithAutoplay("", cache.ChatCache.GetAutoplay(chatID)), ParseMode: "HTML", DisableWebPagePreview: true})
 			return nil
 		}
 		_ = cb.Answer(c, "Track skipped.", nil)
@@ -72,57 +72,57 @@ func playCallbackHandler(c *td.Client, cb *td.UpdateNewCallbackQuery) error {
 	case strings.Contains(data, "play_stop"):
 		if err := calls.Calls.Stop(chatID, false); err != nil {
 			_ = cb.Answer(c, "Unable to stop playback.", nil)
-			_, _ = cb.EditMessageText(c, "Unable to stop playback.", &td.EditMessageTextOpts{ReplyMarkup: utils.ControlButtons(""), ParseMode: "HTML", DisableWebPagePreview: true})
+			_, _ = cb.EditMessageText(c, "Unable to stop playback.", &td.EditMessageTextOpts{ReplyMarkup: utils.ControlButtonsWithAutoplay("", cache.ChatCache.GetAutoplay(chatID)), ParseMode: "HTML", DisableWebPagePreview: true})
 			return nil
 		}
 
 		msg := fmt.Sprintf("<b>Playback stopped.</b>\nRequested by: %s", html.EscapeString(user.FirstName))
 		_ = cb.Answer(c, "Playback stopped.", nil)
-		_, err := cb.EditMessageText(c, msg, &td.EditMessageTextOpts{ReplyMarkup: utils.ControlButtons(""), ParseMode: "HTML", DisableWebPagePreview: true})
+		_, err := cb.EditMessageText(c, msg, &td.EditMessageTextOpts{ReplyMarkup: utils.ControlButtonsWithAutoplay("", cache.ChatCache.GetAutoplay(chatID)), ParseMode: "HTML", DisableWebPagePreview: true})
 		return err
 
 	case strings.Contains(data, "play_pause"):
 		if _, err = calls.Calls.Pause(chatID); err != nil {
 			_ = cb.Answer(c, "Unable to pause playback.", nil)
-			_, _ = cb.EditMessageText(c, "Unable to pause playback.", &td.EditMessageTextOpts{ReplyMarkup: utils.ControlButtons(""), ParseMode: "HTML", DisableWebPagePreview: true})
+			_, _ = cb.EditMessageText(c, "Unable to pause playback.", &td.EditMessageTextOpts{ReplyMarkup: utils.ControlButtonsWithAutoplay("", cache.ChatCache.GetAutoplay(chatID)), ParseMode: "HTML", DisableWebPagePreview: true})
 			return nil
 		}
 		_ = cb.Answer(c, "Playback paused.", nil)
 		text := buildTrackMessage("Paused", "⏸") + fmt.Sprintf("\n\nPaused by %s", html.EscapeString(user.FirstName))
-		_, _ = cb.EditMessageText(c, text, &td.EditMessageTextOpts{ReplyMarkup: utils.ControlButtons("pause"), ParseMode: "HTML", DisableWebPagePreview: true})
+		_, _ = cb.EditMessageText(c, text, &td.EditMessageTextOpts{ReplyMarkup: utils.ControlButtonsWithAutoplay("pause", cache.ChatCache.GetAutoplay(chatID)), ParseMode: "HTML", DisableWebPagePreview: true})
 		return nil
 
 	case strings.Contains(data, "play_resume"):
 		if _, err := calls.Calls.Resume(chatID); err != nil {
 			_ = cb.Answer(c, "Unable to resume playback.", nil)
-			_, _ = cb.EditMessageText(c, "Unable to resume playback.", &td.EditMessageTextOpts{ReplyMarkup: utils.ControlButtons("pause"), ParseMode: "HTML", DisableWebPagePreview: true})
+			_, _ = cb.EditMessageText(c, "Unable to resume playback.", &td.EditMessageTextOpts{ReplyMarkup: utils.ControlButtonsWithAutoplay("pause", cache.ChatCache.GetAutoplay(chatID)), ParseMode: "HTML", DisableWebPagePreview: true})
 			return nil
 		}
 		_ = cb.Answer(c, "Playback resumed.", nil)
 		text := buildTrackMessage("Now Playing", "▶") + fmt.Sprintf("\n\nResumed by %s", html.EscapeString(user.FirstName))
-		_, _ = cb.EditMessageText(c, text, &td.EditMessageTextOpts{ReplyMarkup: utils.ControlButtons("resume"), ParseMode: "HTML", DisableWebPagePreview: true})
+		_, _ = cb.EditMessageText(c, text, &td.EditMessageTextOpts{ReplyMarkup: utils.ControlButtonsWithAutoplay("resume", cache.ChatCache.GetAutoplay(chatID)), ParseMode: "HTML", DisableWebPagePreview: true})
 		return nil
 
 	case strings.Contains(data, "play_mute"):
 		if _, err := calls.Calls.Mute(chatID); err != nil {
 			_ = cb.Answer(c, "Unable to mute playback.", nil)
-			_, _ = cb.EditMessageText(c, "Unable to mute playback.", &td.EditMessageTextOpts{ReplyMarkup: utils.ControlButtons("mute"), ParseMode: "HTML", DisableWebPagePreview: true})
+			_, _ = cb.EditMessageText(c, "Unable to mute playback.", &td.EditMessageTextOpts{ReplyMarkup: utils.ControlButtonsWithAutoplay("mute", cache.ChatCache.GetAutoplay(chatID)), ParseMode: "HTML", DisableWebPagePreview: true})
 			return nil
 		}
 		_ = cb.Answer(c, "Playback muted.", nil)
 		text := buildTrackMessage("Muted", "🔇") + fmt.Sprintf("\n\nMuted by %s", html.EscapeString(user.FirstName))
-		_, _ = cb.EditMessageText(c, text, &td.EditMessageTextOpts{ReplyMarkup: utils.ControlButtons("mute"), ParseMode: "HTML", DisableWebPagePreview: true})
+		_, _ = cb.EditMessageText(c, text, &td.EditMessageTextOpts{ReplyMarkup: utils.ControlButtonsWithAutoplay("mute", cache.ChatCache.GetAutoplay(chatID)), ParseMode: "HTML", DisableWebPagePreview: true})
 		return nil
 
 	case strings.Contains(data, "play_unmute"):
 		if _, err := calls.Calls.Unmute(chatID); err != nil {
 			_ = cb.Answer(c, "Unable to unmute playback.", nil)
-			_, _ = cb.EditMessageText(c, "Unable to unmute playback.", &td.EditMessageTextOpts{ReplyMarkup: utils.ControlButtons("unmute"), ParseMode: "HTML"})
+			_, _ = cb.EditMessageText(c, "Unable to unmute playback.", &td.EditMessageTextOpts{ReplyMarkup: utils.ControlButtonsWithAutoplay("unmute", cache.ChatCache.GetAutoplay(chatID)), ParseMode: "HTML"})
 			return nil
 		}
 		_ = cb.Answer(c, "Playback unmuted.", nil)
 		text := buildTrackMessage("Now Playing", "▶") + fmt.Sprintf("\n\nUnmuted by %s", html.EscapeString(user.FirstName))
-		_, _ = cb.EditMessageText(c, text, &td.EditMessageTextOpts{ReplyMarkup: utils.ControlButtons("unmute"), DisableWebPagePreview: true})
+		_, _ = cb.EditMessageText(c, text, &td.EditMessageTextOpts{ReplyMarkup: utils.ControlButtonsWithAutoplay("unmute", cache.ChatCache.GetAutoplay(chatID)), DisableWebPagePreview: true})
 		return nil
 
 	case strings.Contains(data, "play_add_to_list"):
@@ -193,7 +193,7 @@ func playCallbackHandler(c *td.Client, cb *td.UpdateNewCallbackQuery) error {
 	}
 
 	text := buildTrackMessage("Now Playing", "▶")
-	_, _ = cb.EditMessageText(c, text, &td.EditMessageTextOpts{ReplyMarkup: utils.ControlButtons("resume"), ParseMode: "HTML", DisableWebPagePreview: true})
+	_, _ = cb.EditMessageText(c, text, &td.EditMessageTextOpts{ReplyMarkup: utils.ControlButtonsWithAutoplay("resume", cache.ChatCache.GetAutoplay(chatID)), ParseMode: "HTML", DisableWebPagePreview: true})
 	return nil
 }
 
