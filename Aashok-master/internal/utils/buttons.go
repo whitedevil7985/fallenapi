@@ -245,7 +245,7 @@ func PlayNowCallbackData(trackID string) string {
 func ControlButtonsWithAutoplay(mode string, autoplay bool) *gotdbot.ReplyMarkupInlineKeyboard {
 	keyboard := ControlButtons(mode)
 	label := "🔴 AUTOPLAY: OFF"
-	style := gotdbot.ButtonStyleDanger{}
+	var style gotdbot.ButtonStyle = gotdbot.ButtonStyleDanger{}
 	if autoplay {
 		label = "🟢 AUTOPLAY: ON"
 		style = gotdbot.ButtonStylePrimary{}
