@@ -474,7 +474,7 @@ func sendStartedStreaming(c *td.Client, updater *td.Message, saveCache *utils.Pl
 	escUser := html.EscapeString(saveCache.User)
 
 	nowPlaying := fmt.Sprintf(
-		"<blockquote><u><b>| Started streaming</b></u>\n\n<b>Title:</b> <a href='%s'>%s</a>\n\n<b>Duration:</b> %s min\n<b>Requested by:</b> %s</blockquote>",
+		"<u><b>| Started streaming</b></u>\n\n<b>Title:</b> <a href='%s'>%s</a>\n\n<b>Duration:</b> %s min\n<b>Requested by:</b> %s",
 		escURL, escName, utils.SecToMin(saveCache.Duration), escUser,
 	)
 
