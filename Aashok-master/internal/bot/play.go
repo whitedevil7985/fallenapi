@@ -256,7 +256,7 @@ func handleMedia(c *td.Client, m *td.Message, updater *td.Message, dlMsg *td.Mes
 		return err
 	}
 
-	return sendStartedStreaming(c, updater, &saveCache)
+	return sendStartedStreaming(c, updater, chatID, &saveCache)
 }
 
 // handleTextSearch handles a text search for a song.
@@ -468,7 +468,7 @@ func enqueueTrack(c *td.Client, updater *td.Message, chatId int64, saveCache *ut
 	return false, nil
 }
 
-func sendStartedStreaming(c *td.Client, updater *td.Message, saveCache *utils.PlayerCache) error {
+func sendStartedStreaming(c *td.Client, updater *td.Message, chatID int64, saveCache *utils.PlayerCache) error {
 	escURL := html.EscapeString(saveCache.URL)
 	escName := html.EscapeString(saveCache.Name)
 	escUser := html.EscapeString(saveCache.User)
