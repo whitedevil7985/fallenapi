@@ -92,6 +92,21 @@ func getUrl(m *td.Message) string {
 	return ""
 }
 
+func isVideoMedia(reply *td.Message) bool {
+	if reply == nil || reply.Content == nil {
+		return false
+	}
+
+	switch msg := reply.Content.(type) {
+	case *td.MessageVideo, *td.MessageVideoNote:
+		return true
+	case *td.MessageDocument:
+		return msg.Document != nil && strings.HasPrefix(strings.ToLower(msg.Document.MimeType), "video/")
+	default:
+		return false
+	}
+}
+
 func isValidMedia(reply *td.Message) bool {
 	if reply == nil || reply.Content == nil {
 		return false
