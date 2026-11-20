@@ -239,3 +239,17 @@ func PlayNowCallbackData(trackID string) string {
 	hash := sha256.Sum256([]byte(trackID))
 	return "play_now_hash_" + base64.RawURLEncoding.EncodeToString(hash[:])
 }
+
+ 
+// ControlButtonsWithAutoplay adds a one-tap autoplay toggle to the playback panel.
+func ControlButtonsWithAutoplay(mode string, autoplay bool) *gotdbot.ReplyMarkupInlineKeyboard {
+	keyboard := ControlButtons(mode)
+	label := "Autoplay: OFF"
+	if autoplay {
+		label = "Autoplay: ON"
+	}
+	keyboard.Rows = append(keyboard.Rows, []gotdbot.InlineKeyboardButton{
+		cb(label, "autoplay_toggle", gotdbot.ButtonStylePrimary{}),
+	})
+	return keyboard
+}
