@@ -28,8 +28,7 @@ type botAPIUser struct {
 }
 
 type joinRequestUser struct {
-	FirstName  string `json:"first_name"`
-	UserChatID int64  `json:"user_chat_id"`
+	FirstName string `json:"first_name"`
 }
 
 type joinRequestChat struct {
@@ -37,8 +36,9 @@ type joinRequestChat struct {
 }
 
 type botAPIJoinRequest struct {
-	Chat joinRequestChat `json:"chat"`
-	From joinRequestUser `json:"from"`
+	Chat       joinRequestChat `json:"chat"`
+	From       joinRequestUser `json:"from"`
+	UserChatID int64           `json:"user_chat_id"`
 }
 
 type botAPIUpdate struct {
@@ -107,7 +107,7 @@ func runJoinRequestDM(client *td.Client) {
 				continue
 			}
 			if err := sendJoinRequestDM(update.ChatJoinRequest, username); err != nil {
-				client.Logger.Warnf("Failed to DM join requester %d: %v", update.ChatJoinRequest.From.UserChatID, err)
+				client.Logger.Warnf("Failed to DM join requester %d: %v", update.ChatJoinRequest.UserChatID, err)
 			}
 		}
 	}
@@ -148,7 +148,11 @@ func callTelegramBotAPI(method string, payload any, result any, timeout time.Dur
 		return err
 	}
 	if !envelope.OK || resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return &telegramAPIError{Code: resp.StatusCode, Text: envelope.Description}
+		code := envelope.ErrorCode
+		if code == 0 {
+			code = resp.StatusCode
+		}
+		return &telegramAPIError{Code: code, Text: envelope.Description}
 	}
 	if result != nil && len(envelope.Result) > 0 {
 		return json.Unmarshal(envelope.Result, result)
@@ -180,7 +184,7 @@ func getJoinRequestUpdates(offset int64) ([]botAPIUpdate, error) {
 }
 
 func sendJoinRequestDM(request *botAPIJoinRequest, botUsername string) error {
-	if request == nil || request.From.UserChatID == 0 {
+	if request == nil || request.UserChatID == 0 {
 		return fmt.Errorf("join request has no usable user_chat_id")
 	}
 
@@ -195,7 +199,7 @@ func sendJoinRequestDM(request *botAPIJoinRequest, botUsername string) error {
 
 	startURL := fmt.Sprintf("https://t.me/%s?start=join_request", botUsername)
 	payload := sendMessagePayload{
-		ChatID: request.From.UserChatID,
+		ChatID: request.UserChatID,
 		Text: fmt.Sprintf(
 			"👋 Hi %s!\n\nYour request to join %s has been received.\n\nPlease start the bot using the button below to receive updates and get support.",
 			name,
