@@ -70,8 +70,18 @@ func autoplayCallbackHandler(c *td.Client, cb *td.UpdateNewCallbackQuery) error 
 	}
 	track := cache.ChatCache.GetPlayingTrack(chatID)
 	if track != nil {
-		text := fmt.Sprintf("<u><b>| Started streaming</b></u>\\n\\n<b>Title:</b> <a href='%s'>%s</a>\\n\\n<b>Duration:</b> %s min\\n<b>Requested by:</b> %s",
-			html.EscapeString(track.URL), html.EscapeString(track.Name), utils.SecToMin(track.Duration), html.EscapeString(track.User))
+		text := fmt.Sprintf(
+			`<u><b>🎵 Started streaming</b></u>
+
+<b>Title:</b> <a href='%s'>%s</a>
+
+<b>Duration:</b> %s min
+<b>Requested by:</b> %s`,
+			html.EscapeString(track.URL),
+			html.EscapeString(track.Name),
+			utils.SecToMin(track.Duration),
+			html.EscapeString(track.User),
+		)
 		_, _ = cb.EditMessageText(c, text, &td.EditMessageTextOpts{
 			ParseMode: "HTML",
 			DisableWebPagePreview: true,
