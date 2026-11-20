@@ -276,7 +276,12 @@ func (c *TelegramCalls) PlayTrackWithMessage(bot *td.Client, reply *td.Message, 
 	}
 
 	text := fmt.Sprintf(
-		"<blockquote><u><b>| Started streaming</b></u>\n\n<b>Title:</b> <a href='%s'>%s</a>\n\n<b>Duration:</b> %s min\n<b>Requested by:</b> %s</blockquote>",
+		`<u><b>🎵 Started streaming</b></u>
+
+<b>Title:</b> <a href='%s'>%s</a>
+
+<b>Duration:</b> %s min
+<b>Requested by:</b> %s`,
 		html.EscapeString(song.URL),
 		html.EscapeString(song.Name),
 		utils.SecToMin(song.Duration),
@@ -284,7 +289,7 @@ func (c *TelegramCalls) PlayTrackWithMessage(bot *td.Client, reply *td.Message, 
 	)
 
 	_, err := messaging.FinishProgress(bot, reply, text, &td.EditMessageTextOpts{
-		ReplyMarkup:           utils.ControlButtons("play"),
+		ReplyMarkup:           utils.ControlButtonsWithAutoplay("play", cache.ChatCache.GetAutoplay(chatID)),
 		ParseMode:             "HTML",
 		DisableWebPagePreview: true,
 	}, song.Silent || (len(quiet) > 0 && quiet[0]))
