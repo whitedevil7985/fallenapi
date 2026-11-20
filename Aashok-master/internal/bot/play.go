@@ -453,7 +453,12 @@ func enqueueTrack(c *td.Client, updater *td.Message, chatId int64, saveCache *ut
 		escName := html.EscapeString(saveCache.Name)
 		escUser := html.EscapeString(saveCache.User)
 		queueInfo := fmt.Sprintf(
-			"<blockquote><u><b>Added to queue: %d</b></u>\n\n<b>Title:</b> <a href='%s'>%s</a>\n\n<b>Duration:</b> %s min\n<b>Requested by:</b> %s</blockquote>",
+			`<u><b>🎵 Added to queue: %d</b></u>
+
+<b>Title:</b> <a href='%s'>%s</a>
+
+<b>Duration:</b> %s min
+<b>Requested by:</b> %s`,
 			qLen, escURL, escName, utils.SecToMin(saveCache.Duration), escUser,
 		)
 
