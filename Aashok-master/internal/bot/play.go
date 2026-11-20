@@ -139,6 +139,11 @@ func handlePlay(c *td.Client, m *td.Message, isVideo bool, force bool) error {
 
 	if isValid := isValidMedia(rMsg); isValid {
 		isReply = true
+		// A replied Telegram video should be streamed with its video track
+		// even when the user uses /play instead of /vplay.
+		if isVideoMedia(rMsg) {
+			isVideo = true
+		}
 	}
 
 	if url == "" && args == "" && (!isReply || !isValidMedia(rMsg)) {
