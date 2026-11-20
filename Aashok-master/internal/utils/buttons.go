@@ -244,10 +244,14 @@ func PlayNowCallbackData(trackID string) string {
 // ControlButtonsWithAutoplay adds a one-tap autoplay toggle to the playback panel.
 func ControlButtonsWithAutoplay(mode string, autoplay bool) *gotdbot.ReplyMarkupInlineKeyboard {
 	keyboard := ControlButtons(mode)
-	_ = autoplay // State is reported in the callback alert; keep the button label stable.
-	label := "Autoplay 🔁"
+	label := "🔴 AUTOPLAY: OFF"
+	style := gotdbot.ButtonStyleDanger{}
+	if autoplay {
+		label = "🟢 AUTOPLAY: ON"
+		style = gotdbot.ButtonStylePrimary{}
+	}
 	keyboard.Rows = append(keyboard.Rows, []gotdbot.InlineKeyboardButton{
-		cb(label, "autoplay_toggle", gotdbot.ButtonStylePrimary{}),
+		cb(label, "autoplay_toggle_"+mode, style),
 	})
 	return keyboard
 }
