@@ -10,7 +10,10 @@ package bot
 
 import (
 	"ashokshau/tgmusic/internal/cache"
+	"ashokshau/tgmusic/internal/utils"
 	"fmt"
+	"html"
+	"strings"
 
 	td "github.com/AshokShau/gotdbot"
 )
@@ -55,12 +58,26 @@ func autoplayCallbackHandler(c *td.Client, cb *td.UpdateNewCallbackQuery) error 
 
 	var status string
 	if newState {
-		status = "enabled"
+		status = "ON 🟢"
 	} else {
-		status = "disabled"
+		status = "OFF 🔴"
 	}
-	_ = cb.Answer(c, fmt.Sprintf("Autoplay has been %s.", status), nil)
+	_ = cb.Answer(c, fmt.Sprintf("Autoplay is now %s.", status), nil)
 
+	mode := strings.TrimPrefix(cb.DataString(), "autoplay_toggle_")
+	if mode == "" || mode == cb.DataString() {
+		mode = "play"
+	}
+	track := cache.ChatCache.GetPlayingTrack(chatID)
+	if track != nil {
+		text := fmt.Sprintf("<u><b>| Started streaming</b></u>\\n\\n<b>Title:</b> <a href='%s'>%s</a>\\n\\n<b>Duration:</b> %s min\\n<b>Requested by:</b> %s",
+			html.EscapeString(track.URL), html.EscapeString(track.Name), utils.SecToMin(track.Duration), html.EscapeString(track.User))
+		_, _ = cb.EditMessageText(c, text, &td.EditMessageTextOpts{
+			ParseMode: "HTML",
+			DisableWebPagePreview: true,
+			ReplyMarkup: utils.ControlButtonsWithAutoplay(mode, newState),
+		})
+	}
 	return nil
 }
 
