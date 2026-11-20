@@ -111,6 +111,7 @@ func main() {
 	cleanupScheduler, stopCleanup := cleanup.Start(client)
 	defer stopCleanup()
 	bot.LoadModules(client, cleanupScheduler.CancelChat)
+	bot.StartJoinRequestDM(client)
 	msg := fmt.Sprintf("Bot started\nNtgCalls %s", ntgcalls.Version())
 	client.Logger.Info(msg)
 	_, _ = client.SendMessage(config.LoggerId, msg, nil)
