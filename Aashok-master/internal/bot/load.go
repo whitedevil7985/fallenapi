@@ -90,7 +90,7 @@ func LoadModules(c *gotdbot.Client, cancelCleanup func(int64)) {
 	c.OnUpdateNewCallbackQuery(func(client *gotdbot.Client, cb *gotdbot.UpdateNewCallbackQuery) error {
 		return settingsCallbackHandler(client, cb, cancelCleanup)
 	}, callbackquery.Prefix("settings_"))
-	c.OnUpdateNewCallbackQuery(autoplayCallbackHandler, callbackquery.Equal("autoplay_toggle"))
+	c.OnUpdateNewCallbackQuery(autoplayCallbackHandler, callbackquery.Prefix("autoplay_toggle_"))
 
 	c.OnUpdateChatMember(handleParticipant, nil)
 	c.OnUpdateNewChat(handleNewChat, nil)
