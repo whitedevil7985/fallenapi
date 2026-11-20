@@ -1,0 +1,373 @@
+/*
+ * TgMusicBot - Telegram Music Bot
+ *  Copyright (c) 2025-2026 Ashok Shau
+ *
+ *  Licensed under GNU GPL v3
+ *  See https://github.com/AshokShau/TgMusicBot
+ */
+
+package downloader
+
+import (
+	"ashokshau/tgmusic/internal/config"
+	"ashokshau/tgmusic/internal/utils"
+	"time"
+
+	"context"
+	"crypto/rand"
+	"errors"
+	"fmt"
+	"log/slog"
+	"math/big"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"regexp"
+	"strings"
+)
+
+// youTubeData provides an interface for fetching track and playlist information from YouTube.
+type youTubeData struct {
+	Query    string
+	ApiUrl   string
+	APIKey   string
+	Patterns map[string]*regexp.Regexp
+}
+
+var youtubePatterns = map[string]*regexp.Regexp{
+	"youtube":   regexp.MustCompile(`(?i)^(?:https?://)?(?:www\.)?youtube\.com/.*`),
+	"youtu_be":  regexp.MustCompile(`(?i)^(?:https?://)?(?:www\.)?youtu\.be/.*`),
+	"yt_music":  regexp.MustCompile(`(?i)^(?:https?://)?music\.youtube\.com/.*`),
+	"yt_shorts": regexp.MustCompile(`(?i)^(?:https?://)?(?:www\.)?youtube\.com/shorts/.*`),
+}
+
+// newYouTubeData initializes a youTubeData instance with pre-compiled regex patterns and a cleaned query.
+func newYouTubeData(query string) *youTubeData {
+	return &youTubeData{
+		Query:    strings.TrimSpace(query),
+		ApiUrl:   strings.TrimRight(config.ApiUrl, "/"),
+		APIKey:   config.ApiKey,
+		Patterns: youtubePatterns,
+	}
+}
+
+func (y *youTubeData) isValid() bool {
+	if y.Query == "" {
+		slog.Info("The query or patterns are empty.")
+		return false
+	}
+
+	for _, pattern := range y.Patterns {
+		if pattern.MatchString(y.Query) {
+			return true
+		}
+	}
+	return false
+}
+
+func (y *youTubeData) getInfo() (*utils.PlatformTracks, error) {
+	if !y.isValid() {
+		return nil, errors.New("the provided URL is invalid or the platform is not supported")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 7*time.Second)
+	defer cancel()
+
+	y.Query = normalizeYouTubeURL(y.Query)
+	videoID := extractVideoID(y.Query)
+	playlistID := extractPlaylistID(y.Query)
+
+	switch {
+	case playlistID != "":
+		if isRiteshAPI() && y.APIKey != "" {
+			if pl, err := GetPlaylistAPI(ctx, y.Query, 50); err == nil && len(pl.Results) > 0 {
+				return pl, nil
+			}
+		}
+		if strings.HasPrefix(playlistID, "RD") && !strings.HasPrefix(playlistID, "RDCLAK") {
+			return GetYouTubeMixPlaylist(ctx, playlistID)
+		}
+		return getYouTubePlaylist(ctx, playlistID)
+
+	case videoID != "":
+		if isRiteshAPI() && y.APIKey != "" {
+			if det, err := GetDetailsAPI(ctx, videoID); err == nil && det.Title != "" {
+				link := det.Link
+				if link == "" {
+					link = "https://www.youtube.com/watch?v=" + videoID
+				}
+				thumb := det.Thumbnail
+				if thumb == "" {
+					thumb = fmt.Sprintf("https://i.ytimg.com/vi/%s/hqdefault.jpg", videoID)
+				}
+				return &utils.PlatformTracks{
+					Results: []utils.GetUrlTrack{
+						{
+							Title:     det.Title,
+							Id:        videoID,
+							Url:       link,
+							Thumbnail: thumb,
+							Duration:  parseRiteshDuration(det.DurationSec),
+							Platform:  utils.YouTube,
+						},
+					},
+				}, nil
+			}
+		}
+
+		for _, query := range []string{videoID, y.Query} {
+			tracks, err := searchYouTube(query, 10)
+			if err != nil {
+				continue
+			}
+
+			for _, track := range tracks {
+				if track.Id == videoID {
+					return &utils.PlatformTracks{Results: []utils.GetUrlTrack{track}}, nil
+				}
+			}
+		}
+
+		if title, err := getYouTubeTitleFromOEmbed(videoID); err == nil && title != "" {
+			tracks, err := searchYouTube(title, 10)
+			if err == nil {
+				for _, track := range tracks {
+					if track.Id == videoID {
+						return &utils.PlatformTracks{Results: []utils.GetUrlTrack{track}}, nil
+					}
+				}
+			}
+		}
+
+		slog.Warn("Video ID was extracted but no matching track was found in search results", "video_id", videoID)
+		return getYouTubeVideo(ctx, videoID)
+	}
+
+	return nil, errors.New("no video or playlist results were found")
+}
+
+func (y *youTubeData) search() (*utils.PlatformTracks, error) {
+	if y.isValid() {
+		return y.getInfo()
+	}
+
+	tracks, err := searchYouTube(y.Query, 5)
+	if err != nil {
+		return nil, err
+	}
+
+	return &utils.PlatformTracks{Results: tracks}, nil
+}
+
+func (y *youTubeData) getTrack() (*utils.TrackInfo, error) {
+	if y.Query == "" {
+		return nil, errors.New("the query is empty")
+	}
+
+	if !y.isValid() {
+		return nil, errors.New("the provided URL is invalid or the platform is not supported")
+	}
+
+	if isRiteshAPI() {
+		vidID := extractVideoID(y.Query)
+		if vidID == "" && len(y.Query) == 11 && !strings.ContainsAny(y.Query, " /?:&=#") {
+			vidID = y.Query
+		}
+		if vidID != "" && config.StreamMode {
+			return &utils.TrackInfo{
+				Id:       vidID,
+				URL:      y.Query,
+				Platform: utils.YouTube,
+				CdnURL:   GetStreamURL(vidID, false),
+			}, nil
+		}
+	}
+
+	if y.ApiUrl != "" && y.APIKey != "" {
+		if trackInfo, err := newApiData(y.Query).getTrack(); err == nil {
+			return trackInfo, nil
+		}
+	}
+
+	getInfo, err := y.getInfo()
+	if err != nil {
+		return nil, err
+	}
+	if len(getInfo.Results) == 0 {
+		return nil, errors.New("no video results were found")
+	}
+
+	track := getInfo.Results[0]
+	trackInfo := &utils.TrackInfo{
+		Id:       track.Id,
+		URL:      track.Url,
+		Platform: utils.YouTube,
+	}
+
+	return trackInfo, nil
+}
+
+// downloadTrack handles the download of a track from YouTube.
+func (y *youTubeData) downloadTrack(info *utils.TrackInfo, video bool) (string, error) {
+	if !video && info.CdnURL != "" {
+		return info.CdnURL, nil
+	}
+
+	if isRiteshAPI() {
+		if config.StreamMode {
+			return GetStreamURL(info.Id, video), nil
+		}
+		if filePath, err := DownloadTrackToFile(info.Id, video, 720); err == nil {
+			return filePath, nil
+		}
+	} else if !video && y.ApiUrl != "" && y.APIKey != "" {
+		if filePath, err := y.downloadWithApi(info.Id, video); err == nil {
+			return filePath, nil
+		}
+	}
+
+	return y.downloadWithYtDlp(info.Id, video)
+}
+
+// buildYtdlpParams constructs the command-line parameters for yt-dlp to download media.
+func (y *youTubeData) buildYtdlpParams(videoID string, video bool) ([]string, string) {
+	outputTemplate := filepath.Join(config.DownloadsDir, "%(id)s.%(ext)s")
+	var cookieFile string
+
+	params := []string{
+		"yt-dlp",
+		"--no-warnings",
+		"--quiet",
+		"--geo-bypass",
+		"--retries", "2",
+		"--continue",
+		"--no-part",
+		"--concurrent-fragments", "3",
+		"--socket-timeout", "10",
+		"--throttled-rate", "100K",
+		"--retry-sleep", "1",
+		"--no-write-thumbnail",
+		"--no-write-info-json",
+		"--no-embed-metadata",
+		"--no-embed-chapters",
+		"--no-embed-subs",
+		"--extractor-args", "youtube:player_js_version=actual",
+		"-o", outputTemplate,
+	}
+
+	if video {
+		formatSelector := "bestvideo[height<=720]+bestaudio/best[height<=720]"
+		params = append(params, "-f", formatSelector, "--merge-output-format", "mp4")
+	} else {
+		params = append(params, "-f", "bestaudio[ext=m4a]/bestaudio")
+	}
+
+	cookieFile = y.getCookieFile()
+	if cookieFile != "" {
+		params = append(params, "--cookies", cookieFile)
+	} else if config.Proxy != "" {
+		params = append(params, "--proxy", config.Proxy)
+	}
+
+	videoURL := "https://www.youtube.com/watch?v=" + videoID
+	params = append(params, videoURL, "--print", "after_move:filepath")
+
+	return params, cookieFile
+}
+
+// downloadWithYtDlp downloads media from YouTube using the yt-dlp command-line tool.
+func (y *youTubeData) downloadWithYtDlp(videoID string, video bool) (string, error) {
+	if videoID == "" {
+		return "", errors.New("videoID is empty")
+	}
+
+	ytdlpParams, cookieFile := y.buildYtdlpParams(videoID, video)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, ytdlpParams[0], ytdlpParams[1:]...)
+
+	output, err := cmd.Output()
+	if err != nil {
+		if exitErr, ok := errors.AsType[*exec.ExitError](err); ok {
+			stderr := string(exitErr.Stderr)
+			if cookieFile != "" && strings.Contains(stderr, "Sign in to confirm you're not a bot") {
+				_ = os.Remove(cookieFile)
+			}
+			return "", fmt.Errorf("yt-dlp failed with exit code %d: %s", exitErr.ExitCode(), stderr)
+		}
+
+		if errors.Is(ctx.Err(), context.DeadlineExceeded) {
+			return "", fmt.Errorf("yt-dlp timed out for video ID: %s", videoID)
+		}
+
+		return "", fmt.Errorf("an unexpected error occurred while downloading %s: %w", videoID, err)
+	}
+
+	downloadedPathStr := strings.TrimSpace(string(output))
+	if downloadedPathStr == "" {
+		return "", fmt.Errorf("no output path was returned for %s", videoID)
+	}
+
+	if _, err := os.Stat(downloadedPathStr); os.IsNotExist(err) {
+		return "", fmt.Errorf("the file was not found at the reported path: %s", downloadedPathStr)
+	}
+
+	return downloadedPathStr, nil
+}
+
+// getCookieFile retrieves the path to a cookie file from the configured list.
+func (y *youTubeData) getCookieFile() string {
+	cookiesPath := config.CookiesPath
+	if len(cookiesPath) == 0 {
+		return ""
+	}
+	n, err := rand.Int(rand.Reader, big.NewInt(int64(len(cookiesPath))))
+	if err != nil {
+		slog.Info("Could not generate a random number", "error", err)
+		return cookiesPath[0]
+	}
+
+	return cookiesPath[n.Int64()]
+}
+
+// downloadWithApi downloads a track using the external API.
+func (y *youTubeData) downloadWithApi(videoID string, video bool) (string, error) {
+	if isRiteshAPI() {
+		if config.StreamMode {
+			return GetStreamURL(videoID, video), nil
+		}
+		return DownloadTrackToFile(videoID, video, 720)
+	}
+
+	videoUrl := fmt.Sprintf("https://www.youtube.com/watch?v=%s", videoID)
+	api := newApiData(videoUrl)
+	track, err := api.getTrack()
+	if err != nil {
+		return "", err
+	}
+
+	return processDownload(track)
+}
+
+// getRecommendations retrieves native YouTube mix recommendations without external API.
+func (y *youTubeData) getRecommendations(ctx context.Context, rawURL string) (*utils.PlatformTracks, error) {
+	urlToUse := rawURL
+	if urlToUse == "" {
+		urlToUse = y.Query
+	}
+
+	videoID := extractVideoID(urlToUse)
+	if videoID == "" && urlToUse != "" && !strings.HasPrefix(urlToUse, "http") {
+		if len(urlToUse) == 11 {
+			videoID = urlToUse
+		}
+	}
+
+	if videoID == "" {
+		return nil, errors.New("no valid YouTube video ID found for recommendations")
+	}
+
+	return GetYouTubeMixPlaylist(ctx, "RD"+videoID)
+}
