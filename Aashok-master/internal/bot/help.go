@@ -223,3 +223,27 @@ func helpCallbackHandler(c *td.Client, cb *td.UpdateNewCallbackQuery) error {
 	_ = cb.Answer(c, "Unknown help category.", &td.CallbackAnswerOpts{ShowAlert: true})
 	return nil
 }
+
+
+// helpHandler opens the interactive help menu from the /help command.
+func helpHandler(c *td.Client, m *td.Message) error {
+	deleteCmd(c, m)
+
+	response := fmt.Sprintf(
+			"<h3>Welcome to %s Help!</h3>\n"+
+			"<p>Select a category below to browse the available commands.</p>\n"+
+			"<p><b>Supported platforms:</b> YouTube, Spotify, Apple Music, SoundCloud, Deezer, Twitch, and more.</p>",
+		c.Me().FirstName,
+	)
+
+	richMessage := &td.InputRichMessage{
+		Source: &td.RichMessageSourceHtml{
+			Text: response,
+		},
+	}
+
+	_, err := m.ReplyRichMessage(c, richMessage, &td.SendMessageOpts{
+		ReplyMarkup: utils.HelpMenuKeyboard(),
+	})
+	return err
+}
