@@ -256,7 +256,7 @@ func handleMedia(c *td.Client, m *td.Message, updater *td.Message, dlMsg *td.Mes
 		return err
 	}
 
-	return sendStartedStreaming(c, updater, chatID, &saveCache)
+	return sendStartedStreaming(c, updater, chatId, &saveCache)
 }
 
 // handleTextSearch handles a text search for a song.
@@ -330,7 +330,7 @@ func handleSingleTrack(c *td.Client, m *td.Message, updater *td.Message, song ut
 		return err
 	}
 
-	if err := sendStartedStreaming(c, updater, &saveCache); err != nil {
+	if err := sendStartedStreaming(c, updater, chatId, &saveCache); err != nil {
 		c.Logger.Warn("Edit message failed", "error", err)
 		return err
 	}
