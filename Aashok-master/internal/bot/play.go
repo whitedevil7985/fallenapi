@@ -480,7 +480,7 @@ func sendStartedStreaming(c *td.Client, updater *td.Message, saveCache *utils.Pl
 
 	_, err := messaging.FinishProgress(c, updater, nowPlaying, &td.EditMessageTextOpts{
 		ParseMode:             "HTML",
-		ReplyMarkup:           utils.ControlButtons("play"),
+		ReplyMarkup:           utils.ControlButtonsWithAutoplay("play", cache.ChatCache.GetAutoplay(chatID)),
 		DisableWebPagePreview: true,
 	}, saveCache.Silent)
 
