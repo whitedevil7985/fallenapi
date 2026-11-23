@@ -104,6 +104,7 @@ func getHelpCategories() map[string]struct {
     <tr><td><code>/clearass</code></td><td>Disconnect and clear all active assistant clients.</td></tr>
     <tr><td><code>/leaveall</code></td><td>Disconnect assistants from every active chat.</td></tr>
     <tr><td><code>/logger</code></td><td>View the current logging configuration.</td></tr>
+    <tr><td><code>/restart</code></td><td>Restart the Heroku worker (Owner and Sudo only).</td></tr>
   </table>
 </details>`,
 			Markup: utils.BackHelpMenuKeyboard(),
