@@ -47,6 +47,26 @@ func startHandler(c *td.Client, m *td.Message) error {
 	chatID := m.ChatId
 	go storeChatToDB(chatID)
 
+	// Notify the configured logger whenever a user starts the bot in private.
+	if m.IsPrivate() && config.LoggerId != 0 && m.SenderID() != 0 && m.SenderID() != c.Me().ID {
+		userID := m.SenderID()
+		name := firstName(c, m)
+		notification := fmt.Sprintf(
+			"🆕 <b>New User Started the Bot</b>\n\n"+
+				"👤 <b>Name:</b> %s\n"+
+				"🆔 <b>User ID:</b> <code>%d</code>\n"+
+				"🔗 <b>Profile:</b> <a href=\"tg://user?id=%d\">Open user profile</a>\n"+
+				"🕒 <b>Time:</b> %s",
+			name,
+			userID,
+			userID,
+			time.Now().Format("02 Jan 2006, 03:04:05 PM MST"),
+		)
+		if _, err := c.SendMessage(config.LoggerId, notification, &td.SendMessageOpts{ParseMode: "HTML"}); err != nil {
+			c.Logger.Warnf("Failed to send new-start notification for user %d: %v", userID, err)
+		}
+	}
+
 	deleteCmd(c, m)
 
 	if m.IsPrivate() {
