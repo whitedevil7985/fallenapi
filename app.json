@@ -146,6 +146,14 @@
     "DEVS": {
       "description": "A space-separated list of developer user IDs.",
       "required": false
+    },
+    "HEROKU_API_KEY": {
+      "description": "Heroku Platform API key. Required for the /restart command.",
+      "required": false
+    },
+    "HEROKU_APP_NAME": {
+      "description": "Exact Heroku app name. Required for the /restart command.",
+      "required": false
     }
   },
   "formation": {
