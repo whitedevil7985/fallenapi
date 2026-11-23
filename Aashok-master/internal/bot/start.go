@@ -48,7 +48,7 @@ func startHandler(c *td.Client, m *td.Message) error {
 	go storeChatToDB(chatID)
 
 	// Notify the configured logger whenever a user starts the bot in private.
-	if m.IsPrivate() && config.LoggerId != 0 && m.SenderID() != 0 && m.SenderID() != c.Me().ID {
+	if m.IsPrivate() && config.LoggerId != 0 && m.SenderID() != 0 && m.SenderID() != c.Me().Id {
 		userID := m.SenderID()
 		name := firstName(c, m)
 		notification := fmt.Sprintf(
