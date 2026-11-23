@@ -104,7 +104,7 @@ func getHelpCategories() map[string]struct {
     <tr><td><code>/clearass</code></td><td>Disconnect and clear all active assistant clients.</td></tr>
     <tr><td><code>/leaveall</code></td><td>Disconnect assistants from every active chat.</td></tr>
     <tr><td><code>/logger</code></td><td>View the current logging configuration.</td></tr>
-    <tr><td><code>/restart</code></td><td>Restart the Heroku worker (Owner and Sudo only).</td></tr>
+    <tr><td><code>/restart</code></td><td>Restart the worker (Owner and Sudo only).</td></tr>
   </table>
 </details>`,
 			Markup: utils.BackHelpMenuKeyboard(),
@@ -129,7 +129,6 @@ func getHelpCategories() map[string]struct {
 <details open>
   <summary>Playlist Management</summary>
   <table bordered striped>
-    <tr><th>Command</th><th>Description</th></tr>
     <tr><td><code>/createplaylist</code></td><td>Create a new playlist.</td></tr>
     <tr><td><code>/deleteplaylist</code></td><td>Delete one of your playlists.</td></tr>
     <tr><td><code>/addtoplaylist</code></td><td>Add a track to a playlist.</td></tr>
@@ -233,7 +232,7 @@ func helpHandler(c *td.Client, m *td.Message) error {
 	response := fmt.Sprintf(
 			"<h3>Welcome to %s Help!</h3>\n"+
 			"<p>Select a category below to browse the available commands.</p>\n"+
-			"<p><b>Supported platforms:</b> YouTube, Spotify, Apple Music, SoundCloud, Deezer, Twitch, and more.</p>",
+			"<p><b>Supported platforms:</b> YouTube, Spotify, Apple Music, SoundCloud, Deezer, and more.</p>",
 		c.Me().FirstName,
 	)
 
