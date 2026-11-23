@@ -26,6 +26,7 @@ func LoadModules(c *gotdbot.Client, cancelCleanup func(int64)) {
 		}
 	}
 	c.OnCommand("reload", reloadAdminCacheHandler)
+	c.OnCommand("restart", restartHandler)
 	c.OnCommand("join", joinHandler)
 	c.OnCommand("link", joinHandler)
 	c.OnCommand("authList", authListHandler)
