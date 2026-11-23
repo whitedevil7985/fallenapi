@@ -129,6 +129,7 @@ func getHelpCategories() map[string]struct {
 <details open>
   <summary>Playlist Management</summary>
   <table bordered striped>
+    <tr><th>Command</th><th>Description</th></tr>
     <tr><td><code>/createplaylist</code></td><td>Create a new playlist.</td></tr>
     <tr><td><code>/deleteplaylist</code></td><td>Delete one of your playlists.</td></tr>
     <tr><td><code>/addtoplaylist</code></td><td>Add a track to a playlist.</td></tr>
