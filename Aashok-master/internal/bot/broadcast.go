@@ -149,7 +149,7 @@ func broadcastHandler(c *td.Client, m *td.Message) error {
 	if mode == "chat" || mode == "both" {
 		chats, err = db.Instance.GetAllChats()
 		if err != nil {
-			c.Logger.Error("Broadcast: failed to load groups", "error", err)
+			c.Logger.Warn("Broadcast: failed to load groups", "error", err)
 			_, _ = m.ReplyText(c, "Could not load group list from database. Broadcast was not started.", nil)
 			return td.EndGroups
 		}
@@ -157,7 +157,7 @@ func broadcastHandler(c *td.Client, m *td.Message) error {
 	if mode == "user" || mode == "both" {
 		users, err = db.Instance.GetAllUsers()
 		if err != nil {
-			c.Logger.Error("Broadcast: failed to load users", "error", err)
+			c.Logger.Warn("Broadcast: failed to load users", "error", err)
 			_, _ = m.ReplyText(c, "Could not load user list from database. Broadcast was not started.", nil)
 			return td.EndGroups
 		}
@@ -219,14 +219,10 @@ func broadcastControlCallbackHandler(c *td.Client, cb *td.UpdateNewCallbackQuery
 
 	data := cb.DataString()
 	parts := strings.SplitN(data, "_", 3)
-	if len(parts) != 3 || parts[0] != "broadcast" {
+	if len(parts) != 3 || parts[0] != "broadcast" || parts[2] == "" {
 		return cb.Answer(c, "Invalid broadcast action.", nil)
 	}
-	actionAndID := strings.SplitN(parts[2], "_", 2)
-	if len(actionAndID) != 2 {
-		return cb.Answer(c, "Invalid broadcast action.", nil)
-	}
-	action, id := actionAndID[0], actionAndID[1]
+	action, id := parts[1], parts[2]
 
 	broadcastMu.Lock()
 	pending := pendingBroadcasts[id]
