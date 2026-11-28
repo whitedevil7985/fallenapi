@@ -2,7 +2,6 @@
   "name": "FallenAPI",
   "description": "A Telegram music bot.",
   "repository": "https://github.com/whitedevil7985/fallenapi",
-  "logo": "https://raw.githubusercontent.com/whitedevil7985/fallenapi/main/Aashok-master/docs/logo.jpeg",
   "keywords": [
     "telegram",
     "music",

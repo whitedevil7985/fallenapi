@@ -4,10 +4,10 @@ WORKDIR /app
 
 RUN apk add --no-cache build-base zlib-dev
 
-COPY Aashok-master/go.mod Aashok-master/go.sum ./
+COPY go.mod go.sum ./
 RUN go mod download
 
-COPY Aashok-master/ ./
+COPY . .
 
 RUN go generate .
 RUN go run setup_ntgcalls.go
